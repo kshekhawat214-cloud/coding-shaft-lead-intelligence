@@ -1,52 +1,65 @@
-# Coding Shaft Lead Intelligence Engine
+# ⚡ Coding Shaft — AI Lead Intelligence & CRM Engine
 
-## Purpose
+A modern, production-grade B2B prospecting platform and sales operating system designed to discover, research, score, and convert high-value local business prospects.
 
-The Coding Shaft Lead Intelligence Engine is a production-oriented B2B prospecting platform for discovering businesses in a target location, researching their public digital presence, understanding their reputation and customer feedback, identifying technology opportunities, scoring prospects, and preparing actionable sales intelligence for Coding Shaft.
+---
 
-**Core principle:** discover → research → understand → qualify → prioritize → convert.
+## ✨ Features
 
-## Primary users
+- **📍 Multi-Source Business Discovery**: Real-time geo-discovery powered by OpenStreetMap Overpass with zero-cost architecture.
+- **🧠 Granular Reputation & Menu Intelligence**: Deep analysis of famous dishes, signature services, customer consensus, and operational friction.
+- **⚡ Technical Website Auditing**: Live detection of SSL status, viewport responsiveness, online booking engines, and WhatsApp widgets.
+- **🎯 Algorithmic Lead Scoring (0–100)**: Deterministic lead scoring categorizing prospects into **HOT (75+)**, **HIGH (55–74)**, and **STANDARD**.
+- **📊 2-Way Google Sheets Sync**: Dual-tab auto-sync separating *📞 Contact Ready Leads* (with 1-click WhatsApp links) and *🌐 Web Prospects*.
+- **🔍 Dynamic Multi-Filter CRM**: Filter seamlessly by City, Country, Business Category, and Lead Priority.
 
-- Coding Shaft founders
-- Sales team
-- Business development team
-- Account managers
+---
 
-## Initial workflow
+## 🚀 Quick Start
 
-1. User enters target location, categories, radius, lead limit, and target services.
-2. Business Discovery finds relevant businesses through supported business-data APIs.
-3. Businesses are deduplicated using stable external identifiers.
-4. Research collects publicly available business, website, social, and review information.
-5. Intelligence agents analyze digital maturity, reputation, customer themes, famous-for signals, and pain points.
-6. Opportunity Engine maps evidence to Coding Shaft services.
-7. Lead Scoring calculates a transparent 0–100 score.
-8. Qualified leads are saved to the primary database.
-9. Google Sheets receives a sales-friendly synchronized/exported view.
-10. Dashboard presents the results.
-11. Human approval is required before outbound sales communication.
+### 1. Installation
+```bash
+npm install
+```
 
-## Non-goals for V1
+### 2. Environment Setup
+Create a `.env.local` file:
+```env
+DATABASE_URL="your-supabase-connection-string"
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+```
 
-- Automated unsolicited outreach
-- Private-data collection
-- Private security testing
-- Fabricated business information
-- A single monolithic AI prompt
-- Using Google Sheets as the primary database
+### 3. Run Locally
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Documentation map
+---
 
-- `PRODUCT_REQUIREMENTS.md` — product scope and user stories
-- `ARCHITECTURE.md` — technical architecture and boundaries
-- `DATA_MODEL.md` — entities and database design
-- `AGENT_SYSTEM.md` — AI agents, skills, prompts, and orchestration
-- `LEAD_SCORING.md` — scoring methodology
-- `RESEARCH_POLICY.md` — data quality, source, privacy, and research rules
-- `IMPLEMENTATION_PLAN.md` — phased build plan and acceptance criteria
-- `.env.example` — required configuration placeholders
+## 📁 Project Structure
 
-## Build principle
+```
+├── docs/                 # Complete architecture and data models
+├── prisma/               # Prisma database schema & migrations
+├── src/
+│   ├── app/              # Next.js App Router & API Route Handlers
+│   ├── components/       # Sleek Glassmorphic React components
+│   ├── domain/           # Reputation, phone normalizer & business rules
+│   ├── infrastructure/   # Discovery providers & website auditors
+│   ├── lib/              # Database clients & API response utilities
+│   └── services/         # Orchestration & lead scoring engines
+└── tailwind.config.ts    # Custom emerald/dark theme design system
+```
 
-Do not implement all features in one pass. Build in phases, test each phase, and verify behavior with real integrations only after mocked/unit-tested paths are stable.
+---
+
+## 📚 Documentation
+
+Detailed documentation is available in the [`docs/`](./docs) folder:
+
+- [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) — Technical architecture & component boundaries
+- [`docs/DATA_MODEL.md`](./docs/DATA_MODEL.md) — Database schema & relationships
+- [`docs/LEAD_SCORING.md`](./docs/LEAD_SCORING.md) — 0–100 scoring methodology
+- [`docs/PRODUCT_REQUIREMENTS.md`](./docs/PRODUCT_REQUIREMENTS.md) — Scope & functional specifications
+- [`docs/AGENT_SYSTEM.md`](./docs/AGENT_SYSTEM.md) — AI intelligence skills & workflow design
