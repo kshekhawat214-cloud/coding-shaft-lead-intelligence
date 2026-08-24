@@ -1,0 +1,374 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  USER
+  SALES
+  MANAGER
+}
+
+enum SearchMode {
+  BROAD
+  NO_WEBSITE
+  WEAK_WEBSITE
+  HIGH_REPUTATION
+  HIGH_AUTOMATION_POTENTIAL
+  PREMIUM_BUSINESS
+  CUSTOM
+}
+
+enum JobStatus {
+  QUEUED
+  RUNNING
+  PARTIAL
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum LeadClassification {
+  HOT
+  HIGH
+  MEDIUM
+  LOW
+  NOT_QUALIFIED
+}
+
+enum LeadStatus {
+  NEW
+  QUALIFIED
+  RESEARCHED
+  CONTACTED
+  REPLIED
+  MEETING
+  PROPOSAL
+  NEGOTIATION
+  WON
+  LOST
+  NOT_INTERESTED
+  DO_NOT_CONTACT
+}
+
+enum ResearchType {
+  DISCOVERY
+  WEBSITE_AUDIT
+  REVIEW_INTELLIGENCE
+  SOCIAL_RESEARCH
+  OPPORTUNITY_ANALYSIS
+  FULL_PROFILE
+}
+
+enum RunStatus {
+  QUEUED
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum PriorityLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  role      Role     @default(USER)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  searchJobs      SearchJob[]
+  outreachRecords OutreachRecord[]
+  auditLogs       AuditLog[]
+
+  @@map("users")
+}
+
+model SearchJob {
+  id                 String     @id @default(uuid())
+  userId             String?    @map("user_id")
+  locationQuery      String     @map("location_query")
+  latitude           Float?
+  longitude          Float?
+  radiusMeters       Int        @default(10000) @map("radius_meters")
+  categories         Json       @default("[]")
+  maxBusinesses      Int        @default(20) @map("max_businesses")
+  minimumRating      Float?     @map("minimum_rating")
+  minimumReviewCount Int?       @map("minimum_review_count")
+  searchMode         SearchMode @default(BROAD) @map("search_mode")
+  status             JobStatus  @default(QUEUED)
+  progress           Float      @default(0.0)
+  createdAt          DateTime   @default(now()) @map("created_at")
+  startedAt          DateTime?  @map("started_at")
+  completedAt        DateTime?  @map("completed_at")
+  errorMessage       String?    @map("error_message")
+
+  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  researchRuns ResearchRun[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("search_jobs")
+}
+
+model Business {
+  id              String   @id @default(uuid())
+  externalPlaceId String   @unique @map("external_place_id")
+  name            String
+  primaryCategory String?  @map("primary_category")
+  categories      Json     @default("[]")
+  businessStatus  String?  @map("business_status")
+  mapsUrl         String?  @map("maps_url")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  location             BusinessLocation?
+  contact              BusinessContact?
+  website              Website?
+  socialProfiles       SocialProfile[]
+  reviewSnapshots      ReviewSnapshot[]
+  reviewInsights       ReviewInsight[]
+  businessInsight      BusinessInsight?
+  serviceOpportunities ServiceOpportunity[]
+  leadScore            LeadScore?
+  outreachRecord       OutreachRecord?
+  researchRuns         ResearchRun[]
+
+  @@index([name])
+  @@index([primaryCategory])
+  @@index([createdAt])
+  @@map("businesses")
+}
+
+model BusinessLocation {
+  id               String  @id @default(uuid())
+  businessId       String  @unique @map("business_id")
+  formattedAddress String? @map("formatted_address")
+  city             String?
+  state            String?
+  country          String?
+  postalCode       String? @map("postal_code")
+  latitude         Float?
+  longitude        Float?
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([city])
+  @@index([country])
+  @@map("business_locations")
+}
+
+model BusinessContact {
+  id          String    @id @default(uuid())
+  businessId  String    @unique @map("business_id")
+  publicPhone String?   @map("public_phone")
+  websiteUrl  String?   @map("website_url")
+  source      String?
+  retrievedAt DateTime? @map("retrieved_at")
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("business_contacts")
+}
+
+model Website {
+  id                  String    @id @default(uuid())
+  businessId          String    @unique @map("business_id")
+  url                 String
+  status              String?
+  https               Boolean   @default(false)
+  title               String?
+  metaDescription     String?   @map("meta_description")
+  websiteScore        Float?    @map("website_score")
+  mobileScore         Float?    @map("mobile_score")
+  seoScore            Float?    @map("seo_score")
+  conversionScore     Float?    @map("conversion_score")
+  bookingCapability   Boolean   @default(false) @map("booking_capability")
+  orderingCapability  Boolean   @default(false) @map("ordering_capability")
+  ecommerceCapability Boolean   @default(false) @map("ecommerce_capability")
+  whatsappPresent     Boolean   @default(false) @map("whatsapp_present")
+  researchTimestamp   DateTime? @map("research_timestamp")
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([websiteScore])
+  @@map("websites")
+}
+
+model SocialProfile {
+  id                  String    @id @default(uuid())
+  businessId          String    @map("business_id")
+  platform            String
+  profileUrl          String    @map("profile_url")
+  publicFollowerCount Int?      @map("public_follower_count")
+  activitySignal      String?   @map("activity_signal")
+  confidence          Float     @default(1.0)
+  retrievedAt         DateTime? @map("retrieved_at")
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([platform])
+  @@map("social_profiles")
+}
+
+model ReviewSnapshot {
+  id          String    @id @default(uuid())
+  businessId  String    @map("business_id")
+  rating      Float?
+  reviewCount Int?      @map("review_count")
+  source      String?
+  retrievedAt DateTime? @map("retrieved_at")
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([rating])
+  @@map("review_snapshots")
+}
+
+model ReviewInsight {
+  id                 String   @id @default(uuid())
+  businessId         String   @map("business_id")
+  positiveThemes     Json     @default("[]") @map("positive_themes")
+  negativeThemes     Json     @default("[]") @map("negative_themes")
+  sentimentSummary   String?  @map("sentiment_summary")
+  famousFor          Json     @default("[]") @map("famous_for")
+  customerPainPoints Json     @default("[]") @map("customer_pain_points")
+  businessStrengths  Json     @default("[]") @map("business_strengths")
+  evidence           Json     @default("[]")
+  confidence         Float    @default(1.0)
+  generatedAt        DateTime @default(now()) @map("generated_at")
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@map("review_insights")
+}
+
+model BusinessInsight {
+  id                     String   @id @default(uuid())
+  businessId             String   @unique @map("business_id")
+  digitalMaturity        String?  @map("digital_maturity")
+  technologyGaps         Json     @default("[]") @map("technology_gaps")
+  businessAttractiveness String?  @map("business_attractiveness")
+  summary                String?
+  evidence               Json     @default("[]")
+  confidence             Float    @default(1.0)
+  generatedAt            DateTime @default(now()) @map("generated_at")
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@map("business_insights")
+}
+
+model ServiceOpportunity {
+  id         String        @id @default(uuid())
+  businessId String        @map("business_id")
+  service    String
+  priority   PriorityLevel @default(MEDIUM)
+  reason     String
+  evidence   Json          @default("[]")
+  confidence Float         @default(1.0)
+  createdAt  DateTime      @default(now()) @map("created_at")
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([service])
+  @@index([priority])
+  @@map("service_opportunities")
+}
+
+model LeadScore {
+  id                          String             @id @default(uuid())
+  businessId                  String             @unique @map("business_id")
+  totalScore                  Float              @map("total_score")
+  businessAttractivenessScore Float              @default(0) @map("business_attractiveness_score")
+  reputationScore             Float              @default(0) @map("reputation_score")
+  digitalWeaknessScore        Float              @default(0) @map("digital_weakness_score")
+  technologyOpportunityScore  Float              @default(0) @map("technology_opportunity_score")
+  serviceFitScore             Float              @default(0) @map("service_fit_score")
+  contactabilityScore         Float              @default(0) @map("contactability_score")
+  classification              LeadClassification @default(NOT_QUALIFIED)
+  scoreVersion                String             @default("1.0.0") @map("score_version")
+  calculatedAt                DateTime           @default(now()) @map("calculated_at")
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([totalScore])
+  @@index([classification])
+  @@map("lead_scores")
+}
+
+model OutreachRecord {
+  id               String     @id @default(uuid())
+  businessId       String     @unique @map("business_id")
+  status           LeadStatus @default(NEW)
+  assignedTo       String?    @map("assigned_to")
+  lastContactedAt  DateTime?  @map("last_contacted_at")
+  nextFollowUpAt   DateTime?  @map("next_follow_up_at")
+  notes            String?
+  bestSalesAngle   String?    @map("best_sales_angle")
+  quickWin         String?    @map("quick_win")
+  recommendedPackage String?  @map("recommended_package")
+  outreachIdea     String?    @map("outreach_idea")
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  assignee User?    @relation(fields: [assignedTo], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([assignedTo])
+  @@map("outreach_records")
+}
+
+model ResearchRun {
+  id           String       @id @default(uuid())
+  businessId   String?      @map("business_id")
+  jobId        String?      @map("job_id")
+  researchType ResearchType @map("research_type")
+  source       String?
+  status       RunStatus    @default(QUEUED)
+  startedAt    DateTime?    @map("started_at")
+  completedAt  DateTime?    @map("completed_at")
+  errorMessage String?      @map("error_message")
+
+  business Business?  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  job      SearchJob? @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([jobId])
+  @@index([status])
+  @@map("research_runs")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actor      String   @default("system")
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  metadata   Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [actor], references: [id], onDelete: Cascade)
+
+  @@index([actor])
+  @@index([action])
+  @@index([entityType])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
