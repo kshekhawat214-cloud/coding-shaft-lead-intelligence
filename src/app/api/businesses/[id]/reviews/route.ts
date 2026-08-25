@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { NotFoundError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 interface RouteParams {
   params: { id: string };

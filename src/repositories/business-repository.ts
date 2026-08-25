@@ -298,24 +298,16 @@ export class BusinessRepository {
         });
       }
 
-      // Initialize reputation profile, famous-for, score, and opportunities
-      const { rep } = await this.enrichInitialRecords(tx, business.id, {
+      // Initialize reputation profile, famous-for, score, and opportunities.
+      // NOTE: enrichInitialRecords already creates the OutreachRecord via upsert —
+      // do NOT create it again here or the unique constraint will crash the transaction.
+      await this.enrichInitialRecords(tx, business.id, {
         name: dto.name,
         primaryCategory: dto.primaryCategory,
         city: dto.city,
         address: dto.address,
         publicPhone: dto.publicPhone,
         websiteUrl: dto.websiteUrl,
-      });
-
-      // Outreach lifecycle initialization
-      await tx.outreachRecord.create({
-        data: {
-          businessId: business.id,
-          status: "NEW",
-          bestSalesAngle: rep.bestSalesAngle,
-          quickWin: rep.quickWin,
-        },
       });
 
       return business;
@@ -330,7 +322,7 @@ export class BusinessRepository {
   }
 
   /**
-   * Bulk upsert a list of discovered businesses.
+   * Bulk upsert a list of discovered businesses with concurrent chunking for high performance.
    */
   static async bulkUpsert(
     businesses: DiscoveredBusinessDTO[],
@@ -341,14 +333,29 @@ export class BusinessRepository {
 
     log.info(`Persisting ${businesses.length} discovered businesses to database`, { jobId });
 
-    for (const dto of businesses) {
-      try {
-        const result = await this.upsertBusiness(dto);
-        results.push(result);
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : String(err);
-        log.warn(`Failed to persist business "${dto.name}": ${errorMsg}`);
-        errors.push({ externalPlaceId: dto.externalPlaceId, error: errorMsg });
+    // Process in concurrent chunks of 4 for speed & database safety
+    const CHUNK_SIZE = 4;
+    for (let i = 0; i < businesses.length; i += CHUNK_SIZE) {
+      const chunk = businesses.slice(i, i + CHUNK_SIZE);
+      const chunkResults = await Promise.all(
+        chunk.map(async (dto) => {
+          try {
+            const result = await this.upsertBusiness(dto);
+            return { result, error: null };
+          } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            log.warn(`Failed to persist business "${dto.name}": ${errorMsg}`);
+            return {
+              result: null,
+              error: { externalPlaceId: dto.externalPlaceId, error: errorMsg },
+            };
+          }
+        })
+      );
+
+      for (const item of chunkResults) {
+        if (item.result) results.push(item.result);
+        if (item.error) errors.push(item.error);
       }
     }
 

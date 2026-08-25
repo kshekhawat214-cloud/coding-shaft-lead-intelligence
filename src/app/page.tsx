@@ -27,6 +27,11 @@ export default function Home() {
     setRefreshTrigger((prev) => prev + 1);
   };
 
+  const handleViewInCRM = () => {
+    setRefreshTrigger((prev) => prev + 1);
+    setActiveTab("leads");
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
       {/* Header */}
@@ -105,13 +110,13 @@ export default function Home() {
           <div className="lg:col-span-5">
             <JobList
               refreshTrigger={refreshTrigger}
-              onViewInCRM={() => setActiveTab("leads")}
+              onViewInCRM={handleViewInCRM}
             />
           </div>
         </section>
       ) : (
         <section>
-          <LeadsExplorer />
+          <LeadsExplorer refreshTrigger={refreshTrigger} />
         </section>
       )}
 

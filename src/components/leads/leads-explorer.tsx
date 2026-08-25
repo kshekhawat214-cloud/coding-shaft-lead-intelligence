@@ -99,7 +99,7 @@ interface LeadItem {
   }>;
 }
 
-export function LeadsExplorer() {
+export function LeadsExplorer({ refreshTrigger }: { refreshTrigger?: number }) {
   const [leads, setLeads] = useState<LeadItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -145,7 +145,8 @@ export function LeadsExplorer() {
 
   useEffect(() => {
     fetchLeads();
-  }, [selectedClassification]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClassification, refreshTrigger]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();

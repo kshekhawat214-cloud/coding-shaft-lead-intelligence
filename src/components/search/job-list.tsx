@@ -112,13 +112,14 @@ export function JobList({ refreshTrigger, onViewInCRM }: JobListProps) {
   const handleViewJobLeads = async (id: string, locationQuery: string) => {
     setActionLoading(id);
     try {
-      const res = await fetch(`/api/jobs/${id}`);
+      // Correct endpoint: /api/jobs/[id]/leads returns persisted businesses for this job
+      const res = await fetch(`/api/jobs/${id}/leads`);
       const json = await res.json();
-      if (json.success && json.data?.businesses) {
+      if (json.success && Array.isArray(json.data)) {
         setDiscoveredLeads({
           jobId: id,
           locationQuery,
-          leads: json.data.businesses.map((b: any) => ({
+          leads: json.data.map((b: any) => ({
             name: b.name,
             primaryCategory: b.primaryCategory,
             address: b.location?.formattedAddress || "Local address",
@@ -128,6 +129,8 @@ export function JobList({ refreshTrigger, onViewInCRM }: JobListProps) {
             externalPlaceId: b.externalPlaceId,
           })),
         });
+      } else {
+        alert("No leads found for this job yet.");
       }
     } catch {
       alert("Failed to load leads for this job");
